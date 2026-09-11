@@ -15,7 +15,7 @@ import Alert from '@mui/material/Alert';
 import PageContainer from '../components/common/PageContainer';
 import PostCard from '../components/post/PostCard';
 import { useAuth } from '../hooks/useAuth';
-import { fetchPosts, fetchCategories, fetchLikedPostIds, likePost, unlikePost } from '../lib/posts';
+import { fetchPosts, fetchCategories, fetchLikedPostIds, fetchBestPostIds, likePost, unlikePost } from '../lib/posts';
 import { fetchRecentCommentsByPostIds } from '../lib/comments';
 
 const PAGE_SIZE = 10;
@@ -32,6 +32,7 @@ function PostListPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [recentCommentsByPostId, setRecentCommentsByPostId] = useState({});
   const [likedPostIds, setLikedPostIds] = useState(new Set());
+  const [bestPostIds, setBestPostIds] = useState(new Set());
   const [errorMessage, setErrorMessage] = useState('');
 
   const search = searchParams.get('q') ?? '';
@@ -40,6 +41,7 @@ function PostListPage() {
 
   useEffect(() => {
     fetchCategories().then(setCategories).catch((error) => setErrorMessage(error.message));
+    fetchBestPostIds().then((ids) => setBestPostIds(new Set(ids))).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -175,6 +177,7 @@ function PostListPage() {
                 post={post}
                 recentComments={recentCommentsByPostId[post.id] ?? []}
                 isLiked={likedPostIds.has(post.id)}
+                isBest={bestPostIds.has(post.id)}
                 onToggleLike={handleToggleLike}
               />
             </Grid>

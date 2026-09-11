@@ -10,11 +10,12 @@ import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import StarIcon from '@mui/icons-material/Star';
 
 import PageContainer from '../components/common/PageContainer';
 import CommentSection from '../components/post/CommentSection';
 import { useAuth } from '../hooks/useAuth';
-import { fetchPostById, deletePost, likePost, unlikePost, fetchLikedPostIds } from '../lib/posts';
+import { fetchPostById, deletePost, likePost, unlikePost, fetchLikedPostIds, fetchBestPostIds } from '../lib/posts';
 import { formatDateTime } from '../utils/date';
 import { escapeHtml } from '../utils/sanitize';
 
@@ -27,6 +28,7 @@ function PostDetailPage() {
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
   const [isLiked, setIsLiked] = useState(false);
+  const [isBest, setIsBest] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -37,10 +39,13 @@ function PostDetailPage() {
       .then(async (data) => {
         if (!isActive) return;
         setPost(data);
-        if (user) {
-          const likedIds = await fetchLikedPostIds(user.id, [data.id]);
-          if (isActive) setIsLiked(likedIds.includes(data.id));
-        }
+        const [likedIds, bestIds] = await Promise.all([
+          user ? fetchLikedPostIds(user.id, [data.id]) : Promise.resolve([]),
+          fetchBestPostIds(),
+        ]);
+        if (!isActive) return;
+        setIsLiked(likedIds.includes(data.id));
+        setIsBest(bestIds.includes(data.id));
       })
       .catch((error) => setErrorMessage(error.message))
       .finally(() => isActive && setIsLoading(false));
@@ -106,7 +111,28 @@ function PostDetailPage() {
           </Alert>
         )}
 
-        {post.category?.name && <Chip label={post.category.name} size="small" color="primary" variant="outlined" sx={{ mb: 1.5 }} />}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
+          {post.category?.name && <Chip label={post.category.name} size="small" color="primary" variant="outlined" />}
+          {isBest && (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.4,
+                bgcolor: 'warning.main',
+                color: '#fff',
+                borderRadius: 5,
+                px: 1,
+                py: 0.3,
+              }}
+            >
+              <StarIcon sx={{ fontSize: 14 }} />
+              <Typography variant="caption" sx={{ fontWeight: 700, lineHeight: 1, letterSpacing: 0.3 }}>
+                BEST
+              </Typography>
+            </Box>
+          )}
+        </Box>
 
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 1, fontSize: { xs: '1.4rem', md: '1.75rem' } }}>
           {post.title}

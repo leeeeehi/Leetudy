@@ -44,6 +44,24 @@ export async function fetchPosts({ search = '', categoryId = null, page = 0 } = 
   return { posts: data ?? [], totalCount: count ?? 0 };
 }
 
+const BEST_POST_COUNT = 3;
+
+/**
+ * 좋아요 수 기준 상위 게시물(BEST) id 목록을 조회한다.
+ * @returns {Promise<number[]>} 좋아요 수 상위 게시물 id 목록
+ */
+export async function fetchBestPostIds() {
+  const { data, error } = await supabase
+    .from('ls_posts')
+    .select('id')
+    .gt('like_count', 0)
+    .order('like_count', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(BEST_POST_COUNT);
+  if (error) throw error;
+  return (data ?? []).map((row) => row.id);
+}
+
 /**
  * 게시물 상세를 조회한다.
  * @param {number} postId - 게시물 id [Required]
